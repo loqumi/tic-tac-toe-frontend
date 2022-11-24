@@ -1,31 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useState } from "react";
-import styled from "styled-components";
 import socketService from "./services/socketService";
 import { JoinRoom } from "./components/joinRoom";
 import GameContext, { IGameContextProps } from "./gameContext";
 import { Game } from "./components/game";
-
-const AppContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1em;
-`;
-
-const WelcomeText = styled.h1`
-  margin: 0;
-  color: #8e44ad;
-`;
-
-const MainContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
+import "bulma/css/bulma.css";
 
 function App() {
   const [isInRoom, setInRoom] = useState(false);
@@ -58,13 +37,10 @@ function App() {
 
   return (
     <GameContext.Provider value={gameContextValue}>
-      <AppContainer>
-        <WelcomeText>Welcome to Tic-Tac-Toe</WelcomeText>
-        <MainContainer>
-          {!isInRoom && <JoinRoom />}
-          {isInRoom && <Game />}
-        </MainContainer>
-      </AppContainer>
+      <div>
+        {!isInRoom && <JoinRoom />}
+        {isInRoom && <Game />}
+      </div>
     </GameContext.Provider>
   );
 }

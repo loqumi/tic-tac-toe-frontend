@@ -1,72 +1,7 @@
-import React, { useContext, useEffect, useState } from "react";
-import styled from "styled-components";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import gameContext from "../../gameContext";
 import gameService from "../../services/gameService";
 import socketService from "../../services/socketService";
-
-const GameContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  font-family: "Zen Tokyo Zoo", cursive;
-  position: relative;
-`;
-
-const RowContainer = styled.div`
-  width: 100%;
-  display: flex;
-`;
-
-interface ICellProps {
-  borderTop?: boolean;
-  borderRight?: boolean;
-  borderLeft?: boolean;
-  borderBottom?: boolean;
-}
-
-const Cell = styled.div<ICellProps>`
-  width: 13em;
-  height: 9em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 20px;
-  cursor: pointer;
-  border-top: ${({ borderTop }) => borderTop && "3px solid #8e44ad"};
-  border-left: ${({ borderLeft }) => borderLeft && "3px solid #8e44ad"};
-  border-bottom: ${({ borderBottom }) => borderBottom && "3px solid #8e44ad"};
-  border-right: ${({ borderRight }) => borderRight && "3px solid #8e44ad"};
-  transition: all 270ms ease-in-out;
-
-  &:hover {
-    background-color: #8d44ad28;
-  }
-`;
-
-const PlayStopper = styled.div`
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  z-index: 99;
-  cursor: default;
-`;
-
-const X = styled.span`
-  font-size: 100px;
-  color: #8e44ad;
-  &::after {
-    content: "X";
-  }
-`;
-
-const O = styled.span`
-  font-size: 100px;
-  color: #8e44ad;
-  &::after {
-    content: "O";
-  }
-`;
 
 export type IPlayMatrix = Array<Array<string | null>>;
 export interface IStartGame {
@@ -90,55 +25,60 @@ export function Game() {
     isGameStarted,
   } = useContext(gameContext);
 
-  const checkGameState = (matrix: IPlayMatrix) => {
-    for (let i = 0; i < matrix.length; i++) {
-      let row = [];
-      for (let j = 0; j < matrix[i].length; j++) {
-        row.push(matrix[i][j]);
+  const checkGameState = useCallback(
+    (matrix: IPlayMatrix) => {
+      for (let i = 0; i < matrix.length; i++) {
+        let row = [];
+        for (let j = 0; j < matrix[i].length; j++) {
+          row.push(matrix[i][j]);
+        }
+
+        if (row.every((value) => value && value === playerSymbol)) {
+          return [true, false];
+        } else if (row.every((value) => value && value !== playerSymbol)) {
+          return [false, true];
+        }
       }
 
-      if (row.every((value) => value && value === playerSymbol)) {
-        return [true, false];
-      } else if (row.every((value) => value && value !== playerSymbol)) {
-        return [false, true];
-      }
-    }
+      for (let i = 0; i < matrix.length; i++) {
+        let column = [];
+        for (let j = 0; j < matrix[i].length; j++) {
+          column.push(matrix[j][i]);
+        }
 
-    for (let i = 0; i < matrix.length; i++) {
-      let column = [];
-      for (let j = 0; j < matrix[i].length; j++) {
-        column.push(matrix[j][i]);
-      }
-
-      if (column.every((value) => value && value === playerSymbol)) {
-        return [true, false];
-      } else if (column.every((value) => value && value !== playerSymbol)) {
-        return [false, true];
-      }
-    }
-
-    if (matrix[1][1]) {
-      if (matrix[0][0] === matrix[1][1] && matrix[2][2] === matrix[1][1]) {
-        if (matrix[1][1] === playerSymbol) return [true, false];
-        else return [false, true];
+        if (column.every((value) => value && value === playerSymbol)) {
+          return [true, false];
+        } else if (column.every((value) => value && value !== playerSymbol)) {
+          return [false, true];
+        }
       }
 
-      if (matrix[2][0] === matrix[1][1] && matrix[0][2] === matrix[1][1]) {
-        if (matrix[1][1] === playerSymbol) return [true, false];
-        else return [false, true];
+      if (matrix[1][1]) {
+        if (matrix[0][0] === matrix[1][1] && matrix[2][2] === matrix[1][1]) {
+          if (matrix[1][1] === playerSymbol) return [true, false];
+          else return [false, true];
+        }
+
+        if (matrix[2][0] === matrix[1][1] && matrix[0][2] === matrix[1][1]) {
+          if (matrix[1][1] === playerSymbol) return [true, false];
+          else return [false, true];
+        }
       }
-    }
 
-    //Check for a tie
-    if (matrix.every((m) => m.every((v) => v !== null))) {
-      return [true, true];
-    }
+      //Check for a tie
+      if (matrix.every((m) => m.every((v) => v !== null))) {
+        return [true, true];
+      }
 
-    return [false, false];
-  };
+      return [false, false];
+    },
+    [playerSymbol]
+  );
 
   const updateGameMatrix = (column: number, row: number, symbol: "x" | "o") => {
     const newMatrix = [...matrix];
+
+    if (!!newMatrix[row][column]) return;
 
     if (newMatrix[row][column] === null || newMatrix[row][column] === "null") {
       newMatrix[row][column] = symbol;
@@ -160,16 +100,16 @@ export function Game() {
     }
   };
 
-  const handleGameUpdate = () => {
+  const handleGameUpdate = useCallback(() => {
     if (socketService.socket)
       gameService.onGameUpdate(socketService.socket, (newMatrix) => {
         setMatrix(newMatrix);
         checkGameState(newMatrix);
         setPlayerTurn(true);
       });
-  };
+  }, [checkGameState, setPlayerTurn]);
 
-  const handleGameStart = () => {
+  const handleGameStart = useCallback(() => {
     if (socketService.socket)
       gameService.onStartGame(socketService.socket, (options) => {
         setGameStarted(true);
@@ -177,54 +117,75 @@ export function Game() {
         if (options.start) setPlayerTurn(true);
         else setPlayerTurn(false);
       });
-  };
+  }, [setGameStarted, setPlayerSymbol, setPlayerTurn]);
 
-  const handleGameWin = () => {
+  const handleGameWin = useCallback(() => {
     if (socketService.socket)
       gameService.onGameWin(socketService.socket, (message) => {
         console.log("Here", message);
         setPlayerTurn(false);
         alert(message);
       });
-  };
+  }, [setPlayerTurn]);
 
   useEffect(() => {
     handleGameUpdate();
     handleGameStart();
     handleGameWin();
-  }, []);
+  }, [handleGameStart, handleGameUpdate, handleGameWin]);
 
   return (
-    <GameContainer>
-      {!isGameStarted && (
-        <h2>Waiting for Other Player to Join to Start the Game!</h2>
-      )}
-      {(!isGameStarted || !isPlayerTurn) && <PlayStopper />}
-      {matrix.map((row, rowIdx) => {
-        return (
-          <RowContainer>
-            {row.map((column, columnIdx) => (
-              <Cell
-                borderRight={columnIdx < 2}
-                borderLeft={columnIdx > 0}
-                borderBottom={rowIdx < 2}
-                borderTop={rowIdx > 0}
-                onClick={() =>
-                  updateGameMatrix(columnIdx, rowIdx, playerSymbol)
-                }
-              >
-                {column && column !== "null" ? (
-                  column === "x" ? (
-                    <X />
-                  ) : (
-                    <O />
-                  )
-                ) : null}
-              </Cell>
-            ))}
-          </RowContainer>
-        );
-      })}
-    </GameContainer>
+    <section className="hero is-fullheight is-fullwidth">
+      <div className="hero-body">
+        <div className="container">
+          <div className="columns is-centered is-flex">
+            <div className="columns is-flex-direction-column">
+              <div className="column">
+                {!isGameStarted && (
+                  <h2 className="title is-7 has-text-centered">
+                    Waiting for Other Player to Join to Start the Game!
+                  </h2>
+                )}
+              </div>
+              <div className="column">
+                <div className="box is-relative">
+                  {(!isGameStarted || !isPlayerTurn) && (
+                    <div className="is-overlay is-fullheight is-fullwidth" />
+                  )}
+                  {matrix.map((row, rowIdx) => {
+                    return (
+                      <div className="columns is-centered is-flex" key={rowIdx}>
+                        {row.map((column, columnIdx) => (
+                          <div
+                            className="column is-one-third is-clickable box has-background-dark mb-1 px-6 py-6 mr-1"
+                            key={columnIdx}
+                            onClick={() =>
+                              updateGameMatrix(columnIdx, rowIdx, playerSymbol)
+                            }
+                          >
+                            <div className="is-relative columns is-centered">
+                              {column && column !== "null" ? (
+                                <span className="is-size-5 has-text-white has-text-centered is-overlay">
+                                  {column === "x" ? "X" : "O"}
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="columns is-centered">
+                  <a className="button is-dark" href="/">
+                    Back
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
