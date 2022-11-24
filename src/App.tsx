@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
+import "./App.css";
+import { io } from "socket.io-client";
 import socketService from "./services/socketService";
 import { JoinRoom } from "./components/joinRoom";
 import GameContext, { IGameContextProps } from "./gameContext";
@@ -35,7 +37,7 @@ function App() {
 
   const connectSocket = async () => {
     const socket = await socketService
-      .connect("https://tic-tac-toe-backend-production.up.railway.app")
+      .connect("http://localhost:9000")
       .catch((err) => {
         console.log("Error: ", err);
       });
