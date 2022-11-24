@@ -66,7 +66,7 @@ const O = styled.span`
   &::after {
     content: "O";
   }
-`;
+  `;
 
 export type IPlayMatrix = Array<Array<string | null>>;
 export interface IStartGame {
