@@ -1,30 +1,31 @@
 import React, { useEffect, useState } from "react";
+import styled from "styled-components";
 import socketService from "./services/socketService";
 import { JoinRoom } from "./components/joinRoom";
 import GameContext, { IGameContextProps } from "./gameContext";
 import { Game } from "./components/game";
 
-// const AppContainer = styled.div`
-//   width: 100%;
-//   height: 100%;
-//   display: flex;
-//   flex-direction: column;
-//   align-items: center;
-//   padding: 1em;
-// `;
+const AppContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1em;
+`;
 
-// const WelcomeText = styled.h1`
-//   margin: 0;
-//   color: #cbd71b;
-// `;
+const WelcomeText = styled.h1`
+  margin: 0;
+  color: #8e44ad;
+`;
 
-// const MainContainer = styled.div`
-//   width: 100%;
-//   height: 100%;
-//   display: flex;
-//   align-items: center;
-//   justify-content: center;
-// `;
+const MainContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
 
 function App() {
   const [isInRoom, setInRoom] = useState(false);
@@ -33,8 +34,8 @@ function App() {
   const [isGameStarted, setGameStarted] = useState(false);
 
   const connectSocket = async () => {
-    return await socketService
-      .connect("https://tic-tac-toe-backend-production.up.railway.app/")
+    const socket = await socketService
+      .connect("https://tic-tac-toe-backend-production.up.railway.app")
       .catch((err) => {
         console.log("Error: ", err);
       });
@@ -57,13 +58,13 @@ function App() {
 
   return (
     <GameContext.Provider value={gameContextValue}>
-      <div>
-        <h1>Welcome to Tic-Tac-Toe</h1>
-        <div>
+      <AppContainer>
+        <WelcomeText>Welcome to Tic-Tac-Toe</WelcomeText>
+        <MainContainer>
           {!isInRoom && <JoinRoom />}
           {isInRoom && <Game />}
-        </div>
-      </div>
+        </MainContainer>
+      </AppContainer>
     </GameContext.Provider>
   );
 }
